@@ -27,6 +27,7 @@ use bevy::{
             ImageSamplerDescriptor,
         },
         view::{ExtractedWindow, ExtractedWindows},
+        world_sync::MainEntity,
     },
 };
 use bytemuck::cast_slice;
@@ -232,14 +233,20 @@ impl Node for EguiNode {
             return;
         };
 
-        let mut render_target_query =
-            world.query::<(&EguiSettings, &RenderTargetSize, &mut EguiRenderOutput)>();
+        let mut render_target_query = world.query::<(
+            &EguiSettings,
+            &RenderTargetSize,
+            &mut EguiRenderOutput,
+            &MainEntity,
+        )>();
 
-        let Ok((egui_settings, window_size, mut render_output)) =
-            render_target_query.get_mut(world, self.window_entity)
+        let Some((egui_settings, window_size, mut render_output, _)) = render_target_query
+            .iter_mut(world)
+            .find(|(.., entity)| self.window_entity == entity.id())
         else {
             return;
         };
+
         let window_size = *window_size;
         let paint_jobs = std::mem::take(&mut render_output.paint_jobs);
 
@@ -472,7 +479,15 @@ impl Node for EguiNode {
             return Ok(());
         };
 
-        let transform_buffer_offset = egui_transforms.offsets[&self.window_entity];
+        let Some(&render_world_window_id) = egui_transforms.offsets.keys().find(|&render_entity| {
+            world
+                .get::<MainEntity>(*render_entity)
+                .is_some_and(|main_entity| main_entity.id() == self.window_entity)
+        }) else {
+            return Ok(());
+        };
+
+        let transform_buffer_offset = egui_transforms.offsets[&render_world_window_id];
         let transform_buffer_bind_group = &egui_transforms.bind_group.as_ref().unwrap().1;
 
         let mut requires_reset = true;
