@@ -22,14 +22,15 @@ use bevy::{
             VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderContext, RenderDevice, RenderQueue},
+        sync_world::MainEntity,
         texture::{
             GpuImage, Image, ImageAddressMode, ImageFilterMode, ImageSampler,
             ImageSamplerDescriptor,
         },
         view::{ExtractedWindow, ExtractedWindows},
-        world_sync::MainEntity,
     },
 };
+
 use bytemuck::cast_slice;
 use egui::{TextureFilter, TextureOptions};
 
